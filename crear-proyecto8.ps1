@@ -1,0 +1,77 @@
+# Ghost Browser - Parte 8: GitHub Actions + Git Push
+
+# === WORKFLOW ===
+New-Item -ItemType Directory -Path ".github\workflows" -Force | Out-Null
+
+@'
+name: Build Ghost Browser
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows installer
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghost-browser-windows
+          path: dist/*.exe
+          retention-days: 30
+
+  release:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ghost-browser-windows
+          path: dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+'@ | Set-Content -Path ".github\workflows\build.yml" -Encoding UTF8
+
+Write-Host "Parte 8 completada: .github/workflows/build.yml" -ForegroundColor Green
+Write-Host ""
+Write-Host "=== TODOS LOS ARCHIVOS CREADOS ===" -ForegroundColor Cyan
+Write-Host ""
+Get-ChildItem -Recurse -File | ForEach-Object { Write-Host "  $_" }
+Write-Host ""
+Write-Host "Ahora ejecuta estos comandos para subir a GitHub:" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  git add -A"
+Write-Host "  git commit -m 'feat: Ghost Browser v1.0 completo'"
+Write-Host "  git push origin main"
+Write-Host ""
