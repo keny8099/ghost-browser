@@ -1,3 +1,6 @@
+# Ghost Browser v1.1 - Parte 1: fingerprint.js actualizado (Language coherente con Timezone)
+
+@'
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -104,3 +107,11 @@ function generateFingerprint() {
 function getRandomUserAgent() { return randomItem(USER_AGENTS); }
 
 module.exports = { generateFingerprint, getRandomUserAgent };
+'@ | Set-Content -Path "fingerprint.js" -Encoding UTF8
+
+# Fix BOM
+$content = Get-Content -Path "fingerprint.js" -Raw
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText("$PWD\fingerprint.js", $content, $utf8NoBom)
+
+Write-Host "v1.1 Parte 1 completada: fingerprint.js (Language coherente con Timezone)" -ForegroundColor Green

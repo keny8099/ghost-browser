@@ -1,3 +1,6 @@
+# Ghost Browser v1.1 - Parte 4: index.html (perfiles + IP/DNS)
+
+@'
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -91,3 +94,11 @@
   <script src="renderer.js"></script>
 </body>
 </html>
+'@ | Set-Content -Path "index.html" -Encoding UTF8
+
+# Fix BOM
+$content = Get-Content -Path "index.html" -Raw
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText("$PWD\index.html", $content, $utf8NoBom)
+
+Write-Host "v1.1 Parte 4 completada: index.html (perfiles + IP/DNS)" -ForegroundColor Green

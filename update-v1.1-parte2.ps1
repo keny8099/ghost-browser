@@ -1,3 +1,6 @@
+# Ghost Browser v1.1 - Parte 2: main.js (perfiles independientes + IP/DNS)
+
+@'
 const { app, BrowserWindow, session, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -220,3 +223,12 @@ app.on('window-all-closed', () => { app.quit(); });
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+'@ | Set-Content -Path "main.js" -Encoding UTF8
+
+# Fix BOM
+$content = Get-Content -Path "main.js" -Raw
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText("$PWD\main.js", $content, $utf8NoBom)
+
+Write-Host "v1.1 Parte 2 completada: main.js (perfiles + IP/DNS)" -ForegroundColor Green
+

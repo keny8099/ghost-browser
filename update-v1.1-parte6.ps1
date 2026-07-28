@@ -1,3 +1,7 @@
+# Ghost Browser v1.1 - Parte 6: styles.css actualizado + push
+
+# Agregar estilos de perfiles al final del CSS
+@'
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -338,3 +342,19 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+'@ | Set-Content -Path "styles.css" -Encoding UTF8
+
+# Fix BOM
+$content = Get-Content -Path "styles.css" -Raw
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText("$PWD\styles.css", $content, $utf8NoBom)
+
+Write-Host "v1.1 Parte 6 completada: styles.css (estilos de perfiles)" -ForegroundColor Green
+Write-Host ""
+Write-Host "=== TODOS LOS ARCHIVOS ACTUALIZADOS ===" -ForegroundColor Cyan
+Write-Host "Ahora ejecuta estos comandos para subir:" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  git add -A"
+Write-Host "  git commit -m ""feat: v1.1 - perfiles, IP/DNS, language coherente"""
+Write-Host "  git push origin main"
+Write-Host ""

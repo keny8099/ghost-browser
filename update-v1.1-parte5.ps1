@@ -1,3 +1,6 @@
+# Ghost Browser v1.1 - Parte 5: renderer.js (perfiles + IP/DNS)
+
+@'
 const webview = document.getElementById('browser-view');
 const urlInput = document.getElementById('url-input');
 const statusText = document.getElementById('status-text');
@@ -229,3 +232,11 @@ function showNotification(message) {
 }
 
 init();
+'@ | Set-Content -Path "renderer.js" -Encoding UTF8
+
+# Fix BOM
+$content = Get-Content -Path "renderer.js" -Raw
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText("$PWD\renderer.js", $content, $utf8NoBom)
+
+Write-Host "v1.1 Parte 5 completada: renderer.js (perfiles + IP/DNS)" -ForegroundColor Green
