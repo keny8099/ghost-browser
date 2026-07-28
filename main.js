@@ -25,6 +25,10 @@ if (!fs.existsSync(profilesDir)) fs.mkdirSync(profilesDir, { recursive: true });
 
 app.disableHardwareAcceleration();
 
+// FORZAR User-Agent en TODOS los headers HTTP (quitar Electron del UA)
+const CLEAN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+app.userAgentFallback = CLEAN_UA;
+
 // === STATE (guardar/cargar perfil activo) ===
 function saveState() {
   fs.writeFileSync(stateFile, JSON.stringify({ currentProfile }));
