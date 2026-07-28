@@ -30,11 +30,16 @@ async function init() {
   // Cargar URL guardada del perfil
   const savedUrl = await window.ghostAPI.getProfileUrl(currentProfile);
   if (savedUrl && savedUrl !== '') {
-    webview.src = savedUrl;
+    webview.setAttribute('useragent', result.fingerprint.userAgent);
+        webview.src = savedUrl;
     urlInput.value = savedUrl;
   }
   
   updateStatus('Listo - Perfil: ' + currentProfile);
+  
+  // Forzar User-Agent limpio en el webview (sin Electron)
+  const ua = fp.userAgent;
+  webview.setAttribute('useragent', ua);
 }
 
 function navigate(url) {
@@ -181,9 +186,11 @@ async function renderProfiles() {
         // Cargar URL guardada del perfil
         const savedUrl = await window.ghostAPI.getProfileUrl(name);
         if (savedUrl && savedUrl !== '') {
-          webview.src = savedUrl;
+          webview.setAttribute('useragent', result.fingerprint.userAgent);
+        webview.src = savedUrl;
           urlInput.value = savedUrl;
         } else {
+          webview.setAttribute('useragent', result.fingerprint.userAgent);
           webview.src = 'https://www.google.com';
           urlInput.value = 'https://www.google.com';
         }
