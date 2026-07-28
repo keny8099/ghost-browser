@@ -156,7 +156,7 @@ ipcMain.handle('switch-profile', (ev, name) => {
   if (data && data.fingerprint) {
     currentFingerprint = data.fingerprint;
     // Forzar timezone/lang del sistema
-    currentFingerprint.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    currentFingerprint.timezone = ipTimezone; currentFingerprint.languages = ipLanguage;
   } else {
     currentFingerprint = generateFingerprint();
     saveProfileData(name, { fingerprint: currentFingerprint, createdAt: Date.now(), lastUrl: 'https://www.google.com' });
@@ -207,13 +207,45 @@ ipcMain.handle('clear-all-data', async () => {
 
 ipcMain.handle('get-user-agent', () => currentFingerprint.userAgent);
 
+// === DETECTAR TIMEZONE POR IP ===
+async function detectTimezoneByIP() {
+  return new Promise((resolve) => {
+    const req = https.get('https://worldtimeapi.org/api/ip', (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const info = JSON.parse(data);
+          resolve(info.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+        } catch(e) { resolve(Intl.DateTimeFormat().resolvedOptions().timeZone); }
+      });
+    });
+    req.on('error', () => resolve(Intl.DateTimeFormat().resolvedOptions().timeZone));
+    req.setTimeout(5000, () => { req.destroy(); resolve(Intl.DateTimeFormat().resolvedOptions().timeZone); });
+  });
+}
+
+function getLanguageForTimezone(tz) {
+  if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Denver') || tz.includes('Los_Angeles')) return ['en-US', 'en'];
+  if (tz.includes('Madrid')) return ['es-ES', 'es'];
+  if (tz.includes('Mexico')) return ['es-MX', 'es'];
+  if (tz.includes('Bogota')) return ['es-CO', 'es'];
+  if (tz.includes('London')) return ['en-GB', 'en'];
+  if (tz.includes('Berlin') || tz.includes('Paris')) return ['de-DE', 'de'];
+  if (tz.includes('Sao_Paulo')) return ['pt-BR', 'pt'];
+  return ['en-US', 'en'];
+}
+
 // === INICIO ===
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Detectar timezone real por IP
+  const ipTimezone = await detectTimezoneByIP();
+  const ipLanguage = getLanguageForTimezone(ipTimezone);
   loadState();
   const data = loadProfileData(currentProfile);
   if (data && data.fingerprint) {
     currentFingerprint = data.fingerprint;
-    currentFingerprint.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    currentFingerprint.timezone = ipTimezone; currentFingerprint.languages = ipLanguage;
   }
   // Asegurar que default existe
   if (!fs.existsSync(path.join(profilesDir, 'default'))) {

@@ -40,10 +40,10 @@ function getSystemLanguage() {
   return ['en-US', 'en'];
 }
 
-function generateFingerprint() {
+function generateFingerprint(overrideTZ, overrideLang) {
   const screen = randomItem(SCREEN_RESOLUTIONS);
-  const systemTZ = getSystemTimezone();
-  const systemLang = getSystemLanguage();
+  const systemTZ = overrideTZ || getSystemTimezone();
+  const systemLang = overrideLang || getSystemLanguage();
   return {
     userAgent: randomItem(WIN_USER_AGENTS),
     platform: 'Win32',
