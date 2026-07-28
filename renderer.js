@@ -10,18 +10,31 @@ const profilesPanel = document.getElementById('profiles-panel');
 const profilesList = document.getElementById('profiles-list');
 const currentProfileName = document.getElementById('current-profile-name');
 
+// Guardar URLs por perfil en memoria
+let profileUrls = {};
+let currentProfile = 'default';
+
 async function init() {
   const fp = await window.ghostAPI.getFingerprint();
   fpId.textContent = fp.profileId.substring(0, 8);
-  updateStatus('Listo - Fingerprint cargado');
   
   // Cargar perfil actual
   const profileData = await window.ghostAPI.getProfiles();
-  currentProfileName.textContent = profileData.current;
+  currentProfile = profileData.current;
+  currentProfileName.textContent = currentProfile;
   
-  // Configurar partition del webview
-  const partition = await window.ghostAPI.getProfilePartition(profileData.current);
+  // Configurar partition del webview para cookies independientes
+  const partition = await window.ghostAPI.getProfilePartition(currentProfile);
   webview.partition = partition;
+  
+  // Cargar URL guardada del perfil
+  const savedUrl = await window.ghostAPI.getProfileUrl(currentProfile);
+  if (savedUrl && savedUrl !== '') {
+    webview.src = savedUrl;
+    urlInput.value = savedUrl;
+  }
+  
+  updateStatus('Listo - Perfil: ' + currentProfile);
 }
 
 function navigate(url) {
@@ -38,6 +51,14 @@ function navigate(url) {
   updateStatus('Cargando...');
 }
 
+// Guardar URL actual del perfil cuando cambia
+function saveCurrentUrl() {
+  const url = urlInput.value;
+  if (url && url !== '' && url !== 'about:blank') {
+    window.ghostAPI.saveProfileUrl(currentProfile, url);
+  }
+}
+
 // Navegacion
 document.getElementById('btn-back').addEventListener('click', () => { if (webview.canGoBack()) webview.goBack(); });
 document.getElementById('btn-forward').addEventListener('click', () => { if (webview.canGoForward()) webview.goForward(); });
@@ -47,9 +68,9 @@ document.getElementById('btn-go').addEventListener('click', () => { navigate(url
 urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigate(urlInput.value); });
 
 webview.addEventListener('did-start-loading', () => { updateStatus('Cargando...'); });
-webview.addEventListener('did-finish-load', () => { updateStatus('Cargado'); });
-webview.addEventListener('did-navigate', (e) => { urlInput.value = e.url; });
-webview.addEventListener('did-navigate-in-page', (e) => { urlInput.value = e.url; });
+webview.addEventListener('did-finish-load', () => { updateStatus('Cargado'); saveCurrentUrl(); });
+webview.addEventListener('did-navigate', (e) => { urlInput.value = e.url; saveCurrentUrl(); });
+webview.addEventListener('did-navigate-in-page', (e) => { urlInput.value = e.url; saveCurrentUrl(); });
 webview.addEventListener('page-title-updated', (e) => { document.title = 'Ghost Browser - ' + e.title; });
 
 // === ROTAR FINGERPRINT ===
@@ -80,7 +101,7 @@ document.getElementById('btn-clean-selected').addEventListener('click', async ()
   };
   const result = await window.ghostAPI.clearData(options);
   if (result.success) {
-    showNotification('Datos limpiados (solo perfil: ' + currentProfileName.textContent + ')');
+    showNotification('Datos limpiados (perfil: ' + currentProfile + ')');
     cleanPanel.classList.add('hidden');
   } else {
     showNotification('Error: ' + result.error);
@@ -91,7 +112,7 @@ document.getElementById('btn-clean-all').addEventListener('click', async () => {
   const result = await window.ghostAPI.clearAllData();
   if (result.success) {
     fpId.textContent = result.newFingerprint.profileId.substring(0, 8);
-    showNotification('TODO limpiado + Fingerprint rotado (perfil: ' + currentProfileName.textContent + ')');
+    showNotification('TODO limpiado + Fingerprint rotado (perfil: ' + currentProfile + ')');
     cleanPanel.classList.add('hidden');
     webview.reload();
   } else {
@@ -141,19 +162,34 @@ async function renderProfiles() {
     profilesList.appendChild(div);
   });
 
-  // Event listeners para botones de perfil
   document.querySelectorAll('.profile-switch-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const name = btn.getAttribute('data-name');
+      // Guardar URL actual antes de cambiar
+      saveCurrentUrl();
+      
       const result = await window.ghostAPI.switchProfile(name);
       if (result.success) {
+        currentProfile = name;
         currentProfileName.textContent = name;
         fpId.textContent = result.fingerprint.profileId.substring(0, 8);
-        // Cambiar partition del webview
+        
+        // Cambiar partition del webview (cookies independientes)
         const partition = await window.ghostAPI.getProfilePartition(name);
         webview.partition = partition;
-        webview.reload();
+        
+        // Cargar URL guardada del perfil
+        const savedUrl = await window.ghostAPI.getProfileUrl(name);
+        if (savedUrl && savedUrl !== '') {
+          webview.src = savedUrl;
+          urlInput.value = savedUrl;
+        } else {
+          webview.src = 'https://www.google.com';
+          urlInput.value = 'https://www.google.com';
+        }
+        
         showNotification('Cambiado a perfil: ' + name);
+        profilesPanel.classList.add('hidden');
         await renderProfiles();
       }
     });

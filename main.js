@@ -1,6 +1,8 @@
 const { app, BrowserWindow, session, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
+const dns = require('dns');
 const { generateFingerprint } = require('./fingerprint');
 
 let mainWindow;
@@ -8,7 +10,29 @@ let currentFingerprint = generateFingerprint();
 let currentProfile = 'default';
 const profilesDir = path.join(app.getPath('userData'), 'profiles');
 
-// Crear carpeta de perfiles si no existe
+// Lista de dominios de anuncios para bloquear
+const AD_DOMAINS = [
+  'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
+  'google-analytics.com', 'googletagmanager.com', 'googletagservices.com',
+  'adservice.google.com', 'pagead2.googlesyndication.com',
+  'facebook.com/tr', 'connect.facebook.net/en_US/fbevents.js',
+  'ads.facebook.com', 'pixel.facebook.com',
+  'amazon-adsystem.com', 'ads.yahoo.com', 'ad.doubleclick.net',
+  'adsserver.com', 'adnxs.com', 'adsrvr.org',
+  'outbrain.com', 'taboola.com', 'mgid.com',
+  'popads.net', 'popcash.net', 'propellerads.com',
+  'adcolony.com', 'admob.com', 'applovin.com',
+  'criteo.com', 'criteo.net', 'casalemedia.com',
+  'rubiconproject.com', 'pubmatic.com', 'openx.net',
+  'advertising.com', 'adform.net', 'smartadserver.com',
+  'zedo.com', 'bidswitch.net', 'turn.com',
+  'scorecardresearch.com', 'quantserve.com', 'bluekai.com',
+  'exelator.com', 'eyeota.net', 'rlcdn.com',
+  'demdex.net', 'krxd.net', 'adtechus.com',
+  'serving-sys.com', 'sizmek.com', 'flashtalking.com',
+  'tracker.com', 'analytics.com', 'clicktrack.com',
+];
+
 if (!fs.existsSync(profilesDir)) {
   fs.mkdirSync(profilesDir, { recursive: true });
 }
@@ -55,6 +79,18 @@ function deleteProfile(profileName) {
   return false;
 }
 
+function setupAdBlock(ses) {
+  ses.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
+    const url = details.url.toLowerCase();
+    const blocked = AD_DOMAINS.some(domain => url.includes(domain));
+    if (blocked) {
+      callback({ cancel: true });
+    } else {
+      callback({ cancel: false });
+    }
+  });
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -74,6 +110,10 @@ function createWindow() {
   Menu.setApplicationMenu(null);
   mainWindow.loadFile('index.html');
 
+  // Aplicar AdBlock a la sesion por defecto
+  setupAdBlock(session.defaultSession);
+
+  // Interceptar User-Agent
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders['User-Agent'] = currentFingerprint.userAgent;
     delete details.requestHeaders['X-Client-Data'];
@@ -101,37 +141,21 @@ ipcMain.handle('rotate-fingerprint', () => {
 
 // === IPC: IP Y DNS ===
 ipcMain.handle('get-network-info', async () => {
-  const net = require('net');
-  const dns = require('dns');
-  const https = require('https');
-  const http = require('http');
-
   let ip = 'No disponible';
   let dnsServer = 'No disponible';
 
-  // Obtener IP publica
   try {
-    ip = await new Promise((resolve, reject) => {
+    ip = await new Promise((resolve) => {
       const req = https.get('https://api.ipify.org', (res) => {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
         res.on('end', () => resolve(data.trim()));
       });
-      req.on('error', () => {
-        // Intentar otro servicio
-        const req2 = https.get('https://icanhazip.com', (res) => {
-          let data = '';
-          res.on('data', (chunk) => { data += chunk; });
-          res.on('end', () => resolve(data.trim()));
-        });
-        req2.on('error', () => resolve('No disponible'));
-        req2.setTimeout(5000, () => { req2.destroy(); resolve('No disponible'); });
-      });
-      req.setTimeout(5000, () => { req.destroy(); reject(); });
+      req.on('error', () => resolve('No disponible'));
+      req.setTimeout(5000, () => { req.destroy(); resolve('No disponible'); });
     });
   } catch (e) { ip = 'No disponible'; }
 
-  // Obtener DNS
   try {
     const servers = dns.getServers();
     dnsServer = servers.length > 0 ? servers.join(', ') : 'No disponible';
@@ -153,14 +177,14 @@ ipcMain.handle('create-profile', (event, name) => {
   }
   const fp = generateFingerprint();
   saveProfileData(name, { fingerprint: fp, createdAt: Date.now() });
+  // Configurar AdBlock para la particion del perfil
+  const ses = session.fromPartition('persist:profile_' + name);
+  setupAdBlock(ses);
   return { success: true, profiles: listProfiles() };
 });
 
 ipcMain.handle('switch-profile', (event, name) => {
-  // Guardar fingerprint actual en perfil anterior
   saveProfileData(currentProfile, { fingerprint: currentFingerprint, lastUsed: Date.now() });
-  
-  // Cargar nuevo perfil
   currentProfile = name;
   const data = loadProfileData(name);
   if (data && data.fingerprint) {
@@ -169,7 +193,9 @@ ipcMain.handle('switch-profile', (event, name) => {
     currentFingerprint = generateFingerprint();
     saveProfileData(name, { fingerprint: currentFingerprint, createdAt: Date.now() });
   }
-  
+  // Configurar AdBlock para la particion del perfil
+  const ses = session.fromPartition('persist:profile_' + name);
+  setupAdBlock(ses);
   return { success: true, fingerprint: currentFingerprint, profile: name };
 });
 
@@ -180,7 +206,6 @@ ipcMain.handle('delete-profile', (event, name) => {
 });
 
 ipcMain.handle('get-profile-partition', (event, name) => {
-  // Cada perfil usa una partition de Electron separada = cookies independientes
   return 'persist:profile_' + name;
 });
 
@@ -214,6 +239,20 @@ ipcMain.handle('clear-all-data', async () => {
 });
 
 ipcMain.handle('get-user-agent', () => currentFingerprint.userAgent);
+
+
+// === IPC: URLs POR PERFIL ===
+ipcMain.handle('save-profile-url', (event, name, url) => {
+  const data = loadProfileData(name) || {};
+  data.lastUrl = url;
+  saveProfileData(name, data);
+  return true;
+});
+
+ipcMain.handle('get-profile-url', (event, name) => {
+  const data = loadProfileData(name);
+  return data ? (data.lastUrl || '') : '';
+});
 
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => { app.quit(); });

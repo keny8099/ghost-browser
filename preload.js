@@ -19,4 +19,8 @@ contextBridge.exposeInMainWorld('ghostAPI', {
   switchProfile: (name) => ipcRenderer.invoke('switch-profile', name),
   deleteProfile: (name) => ipcRenderer.invoke('delete-profile', name),
   getProfilePartition: (name) => ipcRenderer.invoke('get-profile-partition', name),
+  
+  // URLs por perfil
+  saveProfileUrl: (name, url) => ipcRenderer.invoke('save-profile-url', name, url),
+  getProfileUrl: (name) => ipcRenderer.invoke('get-profile-url', name),
 });
