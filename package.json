@@ -1,5 +1,5 @@
 {
-  "name": "ghost-browser",
+  "name": "chrome",
   "version": "1.0.0",
   "description": "Navegador anti-fingerprint con rotacion de canvas, fingerprint y limpieza de datos",
   "main": "main.js",

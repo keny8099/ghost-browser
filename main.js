@@ -88,6 +88,19 @@ function createWindow() {
   });
   Menu.setApplicationMenu(null);
   mainWindow.loadFile('index.html');
+  // LIMPIAR headers HTTP - quitar Electron y ghost-browser del User-Agent
+  const ses = session.fromPartition('persist:profile_' + currentProfile);
+  ses.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders['User-Agent'] = currentFingerprint.userAgent;
+    details.requestHeaders['Accept-Language'] = currentFingerprint.languages.join(',');
+    delete details.requestHeaders['X-Client-Data'];
+    callback({ requestHeaders: details.requestHeaders });
+  });
+  setupAdBlock(ses);
+
+  // Bloquear WebRTC IPv6 leak
+  mainWindow.webContents.setWebRTCIPHandlingPolicy('disable_non_proxied_udp');
+
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
