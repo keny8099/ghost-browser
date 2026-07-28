@@ -6,17 +6,12 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
 ];
 
 const WEBGL_VENDORS = [
-  'Google Inc. (NVIDIA)',
-  'Google Inc. (AMD)',
-  'Google Inc. (Intel)',
-  'Google Inc.',
-  'Mozilla',
+  'Google Inc. (NVIDIA)', 'Google Inc. (AMD)', 'Google Inc. (Intel)', 'Google Inc.',
 ];
 
 const WEBGL_RENDERERS = [
@@ -26,8 +21,6 @@ const WEBGL_RENDERERS = [
   'ANGLE (AMD, AMD Radeon RX 6600 XT Direct3D11 vs_5_0 ps_5_0, D3D11)',
   'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)',
   'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)',
-  'ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 Direct3D11 vs_5_0 ps_5_0, D3D11)',
-  'ANGLE (AMD, AMD Radeon RX 7900 XTX Direct3D11 vs_5_0 ps_5_0, D3D11)',
 ];
 
 const SCREEN_RESOLUTIONS = [
@@ -36,30 +29,9 @@ const SCREEN_RESOLUTIONS = [
   { width: 1366, height: 768 },
   { width: 1536, height: 864 },
   { width: 1440, height: 900 },
-  { width: 1600, height: 900 },
-  { width: 3840, height: 2160 },
 ];
 
-// Language ahora esta vinculado al timezone para coherencia
-const TIMEZONE_LANGUAGE_MAP = {
-  'America/New_York': ['en-US', 'en'],
-  'America/Chicago': ['en-US', 'en'],
-  'America/Los_Angeles': ['en-US', 'en'],
-  'America/Denver': ['en-US', 'en'],
-  'Europe/London': ['en-GB', 'en'],
-  'Europe/Madrid': ['es-ES', 'es'],
-  'Europe/Berlin': ['de-DE', 'de'],
-  'America/Bogota': ['es-CO', 'es'],
-  'America/Mexico_City': ['es-MX', 'es'],
-  'America/Sao_Paulo': ['pt-BR', 'pt'],
-  'America/Buenos_Aires': ['es-AR', 'es'],
-  'America/Lima': ['es-PE', 'es'],
-  'America/Santiago': ['es-CL', 'es'],
-};
-
-const TIMEZONES = Object.keys(TIMEZONE_LANGUAGE_MAP);
-
-const PLATFORMS = ['Win32', 'Win32', 'Win32', 'MacIntel', 'Linux x86_64'];
+const PLATFORMS = ['Win32', 'Win32', 'Win32', 'Win32'];
 
 function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -76,10 +48,11 @@ function generateAudioNoise() {
   return { noiseLevel: Math.random() * 0.0001, frequencyShift: Math.random() * 0.001 };
 }
 
-function generateFingerprint() {
+// Genera fingerprint con idioma/timezone fijos (se sobreescribe despues con los del IP)
+function generateFingerprint(lang, tz) {
   const screen = randomItem(SCREEN_RESOLUTIONS);
-  const timezone = randomItem(TIMEZONES);
-  const languages = TIMEZONE_LANGUAGE_MAP[timezone]; // Coherente con timezone
+  const languages = lang || ['en-US', 'en'];
+  const timezone = tz || 'America/New_York';
   return {
     userAgent: randomItem(USER_AGENTS),
     platform: randomItem(PLATFORMS),
@@ -87,20 +60,18 @@ function generateFingerprint() {
     timezone: timezone,
     screen: {
       width: screen.width, height: screen.height,
-      colorDepth: randomItem([24, 32]),
-      pixelRatio: randomItem([1, 1.25, 1.5, 2]),
+      colorDepth: 24,
+      pixelRatio: randomItem([1, 1.25, 1.5]),
     },
-    hardwareConcurrency: randomItem([2, 4, 6, 8, 12, 16]),
-    deviceMemory: randomItem([2, 4, 8, 16]),
+    hardwareConcurrency: randomItem([4, 6, 8, 12]),
+    deviceMemory: randomItem([4, 8, 16]),
     webgl: { vendor: randomItem(WEBGL_VENDORS), renderer: randomItem(WEBGL_RENDERERS) },
     canvas: generateCanvasNoise(),
     audio: generateAudioNoise(),
-    doNotTrack: randomItem(['1', null]),
+    doNotTrack: null,
     maxTouchPoints: 0,
     profileId: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
   };
 }
 
-function getRandomUserAgent() { return randomItem(USER_AGENTS); }
-
-module.exports = { generateFingerprint, getRandomUserAgent };
+module.exports = { generateFingerprint };
