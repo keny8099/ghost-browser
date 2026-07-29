@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ghost Browser</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -26,19 +25,12 @@
     </div>
   </div>
 
-  <!-- Panel de limpieza -->
   <div id="clean-panel" class="panel hidden">
-    <div class="panel-header">
-      <h3>Limpiar Datos (perfil actual)</h3>
-      <button id="close-clean-panel" class="close-btn">&times;</button>
-    </div>
+    <div class="panel-header"><h3>Limpiar Datos (perfil actual)</h3><button id="close-clean-panel" class="close-btn">&times;</button></div>
     <div class="panel-body">
       <label class="checkbox-item"><input type="checkbox" id="chk-cookies" checked> Cookies</label>
       <label class="checkbox-item"><input type="checkbox" id="chk-cache" checked> Cache</label>
       <label class="checkbox-item"><input type="checkbox" id="chk-localstorage" checked> LocalStorage</label>
-      <label class="checkbox-item"><input type="checkbox" id="chk-sessionstorage" checked> SessionStorage</label>
-      <label class="checkbox-item"><input type="checkbox" id="chk-indexeddb" checked> IndexedDB</label>
-      <label class="checkbox-item"><input type="checkbox" id="chk-websql"> WebSQL</label>
       <div class="panel-actions">
         <button id="btn-clean-selected" class="action-btn">Limpiar Seleccionados</button>
         <button id="btn-clean-all" class="action-btn danger-btn">Limpiar TODO + Rotar</button>
@@ -46,28 +38,20 @@
     </div>
   </div>
 
-  <!-- Panel de perfiles -->
   <div id="profiles-panel" class="panel hidden">
-    <div class="panel-header">
-      <h3>Perfiles</h3>
-      <button id="close-profiles-panel" class="close-btn">&times;</button>
-    </div>
+    <div class="panel-header"><h3>Perfiles</h3><button id="close-profiles-panel" class="close-btn">&times;</button></div>
     <div class="panel-body">
       <div class="profile-create">
         <input type="text" id="new-profile-name" placeholder="Nombre del perfil..." class="profile-input">
         <button id="btn-create-profile" class="action-btn">+ Crear</button>
       </div>
       <div id="profiles-list" class="profiles-list"></div>
-      <p class="profile-note">Cada perfil guarda sus cookies y sesiones por separado.</p>
+      <p class="profile-note">Cada perfil guarda sus cookies por separado.</p>
     </div>
   </div>
 
-  <!-- Panel de fingerprint -->
   <div id="fp-panel" class="panel hidden">
-    <div class="panel-header">
-      <h3>Fingerprint Actual</h3>
-      <button id="close-fp-panel" class="close-btn">&times;</button>
-    </div>
+    <div class="panel-header"><h3>Fingerprint Actual</h3><button id="close-fp-panel" class="close-btn">&times;</button></div>
     <div class="panel-body">
       <div id="network-info" class="network-info">
         <div class="fp-row"><span class="fp-label">IP Publica</span><span class="fp-value" id="info-ip">Cargando...</span></div>
@@ -79,15 +63,12 @@
   </div>
 
   <div id="notification" class="notification hidden"></div>
-
   <webview id="browser-view" src="https://www.google.com" preload="./webview-preload.js" useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"></webview>
-
   <div class="status-bar">
     <span id="status-text">Listo</span>
-    <span id="profile-badge" class="profile-badge" title="Perfil activo">Perfil: <span id="current-profile-name">default</span></span>
-    <span id="fp-badge" class="fp-badge" title="ID del perfil actual">ID: <span id="fp-id">---</span></span>
+    <span id="profile-badge" class="profile-badge">Perfil: <span id="current-profile-name">default</span></span>
+    <span id="fp-badge" class="fp-badge">ID: <span id="fp-id">---</span></span>
   </div>
-
   <script src="renderer.js"></script>
 </body>
 </html>

@@ -1,36 +1,24 @@
 {
   "name": "browser",
   "version": "120.0.0",
-  "description": "Navegador anti-fingerprint con rotacion de canvas, fingerprint y limpieza de datos",
+  "description": "Ghost Browser",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win",
-    "build:linux": "electron-builder --linux"
+    "build": "electron-builder --win"
   },
-  "author": "GhostBrowser",
+  "author": "User",
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1"
   },
   "build": {
-    "appId": "com.ghost.browser",
+    "appId": "com.user.browser",
     "productName": "Ghost Browser",
-    "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "assets/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "files": [
-      "**/*",
-      "!dist/**"
-    ]
+    "directories": { "output": "dist" },
+    "win": { "target": "nsis", "icon": "assets/icon.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
+    "files": ["**/*", "!dist/**"]
   }
 }
