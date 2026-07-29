@@ -26,6 +26,8 @@ function createTab(url) {
   wv.src = url || "https://www.google.com";
   wv.id = "wv-" + id;
   webviewsContainer.appendChild(wv);
+  wv.addEventListener("new-window", (e) => { e.preventDefault(); if(e.url && e.url.startsWith("http")) { createTab(e.url); } });
+  wv.addEventListener("did-create-window", (e) => { e.preventDefault(); });
   tabs.push({ id, title: "Nueva pestana", url: wv.src });
   wv.addEventListener("page-title-updated", (e) => { const tab = tabs.find(t=>t.id===id); if(tab) tab.title = e.title; renderTabs(); });
   wv.addEventListener("did-navigate", (e) => { const tab = tabs.find(t=>t.id===id); if(tab) tab.url = e.url; if(activeTabId===id) urlInput.value = e.url; saveAllUrls(); });
