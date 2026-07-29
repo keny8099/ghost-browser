@@ -254,4 +254,13 @@ app.whenReady().then(async () => {
   createWindow();
 });
 
+// ADBLOCK GLOBAL - intercepta TODAS las sesiones (incluido webview)
+app.on('web-contents-created', (event, contents) => {
+  contents.session.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
+    const url = details.url.toLowerCase();
+    const blocked = AD_DOMAINS.some(d => url.includes(d));
+    callback({ cancel: blocked });
+  });
+});
+
 app.on('window-all-closed', () => { saveState(); app.quit(); });

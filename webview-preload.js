@@ -15,40 +15,27 @@ function applyFingerprint() {
       'use strict';
       const fp = ${JSON.stringify(fingerprint)};
 
-      // === OCULTAR QUE ES ELECTRON/AUTOMATED ===
-      // Eliminar webdriver
+      // USAR TIMEZONE DEL SISTEMA REAL (no del fingerprint guardado)
+      const REAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      fp.timezone = REAL_TZ;
+
+      // === OCULTAR ELECTRON ===
       Object.defineProperty(navigator, 'webdriver', { get: () => false });
-      // Eliminar propiedades de Electron
       delete window.process;
       delete window.require;
-      delete window.__electron;
-      // Fake plugins (Chrome normal tiene plugins)
       Object.defineProperty(navigator, 'plugins', {
-        get: () => {
-          return {
-            length: 3,
-            0: { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
-            1: { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
-            2: { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' },
-            item: function(i) { return this[i]; },
-            namedItem: function(n) { for(let i=0;i<this.length;i++) if(this[i].name===n) return this[i]; return null; },
-            refresh: function() {},
-          };
-        }
+        get: () => ({
+          length: 3,
+          0: { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+          1: { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
+          2: { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' },
+          item: function(i) { return this[i]; },
+          namedItem: function(n) { for(let i=0;i<this.length;i++) if(this[i].name===n) return this[i]; return null; },
+          refresh: function() {},
+        })
       });
-      // Fake chrome object
       if (!window.chrome) {
         window.chrome = { runtime: {}, loadTimes: function(){}, csi: function(){} };
-      }
-      // Fake permissions query
-      const origQuery = window.navigator.permissions ? window.navigator.permissions.query.bind(window.navigator.permissions) : null;
-      if (origQuery) {
-        window.navigator.permissions.query = (params) => {
-          if (params.name === 'notifications') {
-            return Promise.resolve({ state: 'prompt', onchange: null });
-          }
-          return origQuery(params);
-        };
       }
 
       // === CANVAS SPOOFING ===
@@ -60,8 +47,7 @@ function applyFingerprint() {
             const imageData = ctx.getImageData(0, 0, Math.min(this.width, 100), Math.min(this.height, 100));
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
-              const noise = ((Math.sin(fp.canvas.seed + i) * 10000) % 1) * fp.canvas.noiseLevel;
-              data[i] = Math.min(255, Math.max(0, data[i] + noise * 2));
+              data[i] = Math.min(255, Math.max(0, data[i] + ((Math.sin(fp.canvas.seed + i) * 10000) % 1) * 2));
             }
             ctx.putImageData(imageData, 0, 0);
           } catch(e) {}
@@ -85,7 +71,7 @@ function applyFingerprint() {
         };
       }
 
-      // === NAVIGATOR SPOOFING (consistente - todo Windows) ===
+      // === NAVIGATOR SPOOFING ===
       Object.defineProperty(navigator, 'userAgent', { get: () => fp.userAgent });
       Object.defineProperty(navigator, 'platform', { get: () => fp.platform });
       Object.defineProperty(navigator, 'languages', { get: () => Object.freeze([...fp.languages]) });
@@ -94,7 +80,6 @@ function applyFingerprint() {
       Object.defineProperty(navigator, 'deviceMemory', { get: () => fp.deviceMemory });
       Object.defineProperty(navigator, 'maxTouchPoints', { get: () => fp.maxTouchPoints });
       Object.defineProperty(navigator, 'vendor', { get: () => 'Google Inc.' });
-      Object.defineProperty(navigator, 'appVersion', { get: () => fp.userAgent.replace('Mozilla/', '') });
 
       // === SCREEN SPOOFING ===
       Object.defineProperty(screen, 'width', { get: () => fp.screen.width });
@@ -102,33 +87,10 @@ function applyFingerprint() {
       Object.defineProperty(screen, 'availWidth', { get: () => fp.screen.width });
       Object.defineProperty(screen, 'availHeight', { get: () => fp.screen.height - 40 });
       Object.defineProperty(screen, 'colorDepth', { get: () => fp.screen.colorDepth });
-      Object.defineProperty(screen, 'pixelDepth', { get: () => fp.screen.colorDepth });
-      Object.defineProperty(window, 'devicePixelRatio', { get: () => fp.screen.pixelRatio });
-      Object.defineProperty(window, 'innerWidth', { get: () => fp.screen.width });
-      Object.defineProperty(window, 'outerWidth', { get: () => fp.screen.width });
-      Object.defineProperty(window, 'innerHeight', { get: () => fp.screen.height - 80 });
-      Object.defineProperty(window, 'outerHeight', { get: () => fp.screen.height });
 
-      // === TIMEZONE SPOOFING ===
-      const targetTZ = fp.timezone;
-      const OrigDTF = Intl.DateTimeFormat;
-      Intl.DateTimeFormat = function(locale, options) {
-        if (!options) options = {};
-        options.timeZone = targetTZ;
-        return new OrigDTF(locale, options);
-      };
-      Intl.DateTimeFormat.prototype = OrigDTF.prototype;
-      
-      const origResolved = OrigDTF.prototype.resolvedOptions;
-      OrigDTF.prototype.resolvedOptions = function() {
-        const r = origResolved.call(this);
-        r.timeZone = targetTZ;
-        return r;
-      };
-
-      const tzOffsets = { 'America/New_York':-300,'America/Chicago':-360,'America/Denver':-420,'America/Los_Angeles':-480,'Europe/London':0,'Europe/Madrid':60,'Europe/Berlin':60,'America/Bogota':-300,'America/Mexico_City':-360 };
-      const fakeOffset = -(tzOffsets[targetTZ] || new Date().getTimezoneOffset());
-      Date.prototype.getTimezoneOffset = function() { return fakeOffset; };
+      // === TIMEZONE - NO TOCAR === 
+      // Dejamos el timezone REAL del sistema (no lo modificamos)
+      // Asi Local y System siempre coinciden
 
       // === WEBRTC PROTECTION ===
       if (typeof RTCPeerConnection !== 'undefined') {
@@ -140,7 +102,7 @@ function applyFingerprint() {
         window.RTCPeerConnection.prototype = origRTC.prototype;
       }
 
-      console.log('[Ghost v1.5] OK:', fp.profileId, '| UA:', fp.userAgent.substring(0,30));
+      console.log('[Ghost v2.0] OK | TZ real:', REAL_TZ);
     })();
   `;
 
