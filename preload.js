@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("ghostAPI", {
   deleteProfile: (name) => ipcRenderer.invoke("delete-profile", name),
   saveProfileUrl: (name, url) => ipcRenderer.invoke("save-profile-url", name, url),
   getProfileUrl: (name) => ipcRenderer.invoke("get-profile-url", name),
+  onOpenUrl: (callback) => ipcRenderer.on("open-url", (ev, url) => callback(url)),
 });

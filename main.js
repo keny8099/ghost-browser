@@ -37,6 +37,12 @@ function createWindow() {
 }
 
 app.on("web-contents-created", (ev, contents) => {
+  contents.setWindowOpenHandler(({ url }) => {
+    if (url && url.startsWith("http")) {
+      if (mainWindow) { mainWindow.webContents.send("open-url", url); }
+    }
+    return { action: "deny" };
+  });
   contents.session.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders["User-Agent"] = UA;
     details.requestHeaders["Accept-Language"] = "en-US,en;q=0.9";

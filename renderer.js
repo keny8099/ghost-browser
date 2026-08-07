@@ -177,4 +177,6 @@ function renderFP(fp){fpInfo.innerHTML="<div class=\"fp-row\"><span class=\"fp-l
 function updateStatus(t){statusText.textContent=t;}
 function showNotification(msg){notification.textContent=msg;notification.classList.remove("hidden");setTimeout(()=>{notification.classList.add("hidden");},2500);}
 
+window.ghostAPI.onOpenUrl((url) => { createTab(url); });
+
 init();
