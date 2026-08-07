@@ -23,6 +23,7 @@ function createTab(url) {
   wv.setAttribute("preload", "./webview-preload.js");
   wv.setAttribute("useragent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
   wv.setAttribute("partition", "persist:" + currentProfile);
+  wv.setAttribute("allowpopups", "true");
   wv.src = url || "https://www.google.com";
   wv.id = "wv-" + id;
   webviewsContainer.appendChild(wv);

@@ -43,6 +43,17 @@ app.on("web-contents-created", (ev, contents) => {
     }
     return { action: "deny" };
   });
+  contents.on("context-menu", (e, params) => {
+    const { Menu, MenuItem } = require("electron");
+    const menu = new Menu();
+    if (params.linkURL) { menu.append(new MenuItem({ label: "Abrir en nueva pestana", click: () => { if (mainWindow) mainWindow.webContents.send("open-url", params.linkURL); } })); }
+    menu.append(new MenuItem({ label: "Atras", click: () => { contents.goBack(); } }));
+    menu.append(new MenuItem({ label: "Adelante", click: () => { contents.goForward(); } }));
+    menu.append(new MenuItem({ label: "Recargar", click: () => { contents.reload(); } }));
+    menu.append(new MenuItem({ type: "separator" }));
+    menu.append(new MenuItem({ label: "Inspeccionar", click: () => { contents.openDevTools(); } }));
+    menu.popup();
+  });
   contents.session.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders["User-Agent"] = UA;
     details.requestHeaders["Accept-Language"] = "en-US,en;q=0.9";
